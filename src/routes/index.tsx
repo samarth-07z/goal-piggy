@@ -46,6 +46,7 @@ function SavingsDashboard() {
   const [goalOpen, setGoalOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string>();
@@ -125,6 +126,15 @@ function SavingsDashboard() {
     setGoal(demoGoal); setHistory(demoHistory); setDeleteOpen(false); setMenuOpen(false); setNotice("Goal removed. The example is ready when you are."); setBusy(false);
   }
 
+  async function resetGoal() {
+    setBusy(true);
+    if (goal.id !== "demo") {
+      const { error } = await supabase.from("savings_contributions").delete().eq("goal_id", goal.id);
+      if (!error) { setHistory([]); setGoal((current) => ({ ...current, saved_amount: 0 })); }
+    } else { setGoal((current) => ({ ...current, saved_amount: 0 })); setHistory([]); }
+    setResetOpen(false); setMenuOpen(false); setNotice("Savings progress reset to zero"); setBusy(false);
+  }
+
   return (
     <main className="min-h-screen bg-background pb-28 text-foreground lg:pb-10">
       <header className="sticky top-0 z-30 border-b border-border/70 bg-surface backdrop-blur-xl">
@@ -134,7 +144,7 @@ function SavingsDashboard() {
             <NavButton active={tab === "home"} onClick={() => setTab("home")} icon={<Home />}>Overview</NavButton>
             <NavButton active={tab === "history"} onClick={() => setTab("history")} icon={<History />}>Activity</NavButton>
           </div>
-          <div className="relative"><Button variant="ghost" size="icon" aria-label="Goal options" onClick={() => setMenuOpen((v) => !v)}><MoreHorizontal /></Button>{menuOpen && <div className="absolute right-0 top-11 z-40 w-44 rounded-xl border bg-surface-raised p-1.5 shadow-soft"><button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted" onClick={() => { setGoalOpen(true); setMenuOpen(false); }}><Pencil className="size-4"/> Edit goal</button><button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-muted" onClick={() => setDeleteOpen(true)}><Trash2 className="size-4"/> Delete goal</button></div>}</div>
+          <div className="relative"><Button variant="ghost" size="icon" aria-label="Goal options" onClick={() => setMenuOpen((v) => !v)}><MoreHorizontal /></Button>{menuOpen && <div className="absolute right-0 top-11 z-40 w-44 rounded-xl border bg-surface-raised p-1.5 shadow-soft"><button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted" onClick={() => { setGoalOpen(true); setMenuOpen(false); }}><Pencil className="size-4"/> Edit goal</button><button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted" onClick={() => setResetOpen(true)}><History className="size-4"/> Reset progress</button><button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-muted" onClick={() => setDeleteOpen(true)}><Trash2 className="size-4"/> Delete goal</button></div>}</div>
         </div>
       </header>
 
@@ -172,6 +182,7 @@ function SavingsDashboard() {
       <GoalDialog open={goalOpen} onOpenChange={setGoalOpen} goal={goal} busy={busy} onSave={saveGoal}/>
       <PaymentDialog open={payOpen} onOpenChange={setPayOpen} target={Number(goal.daily_target)} remaining={remaining} busy={busy} onPay={addContribution}/>
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}><AlertDialogContent className="max-w-sm rounded-2xl"><AlertDialogHeader><AlertDialogTitle>Delete this goal?</AlertDialogTitle><AlertDialogDescription>This removes the goal and its complete payment history. This cannot be undone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep goal</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={removeGoal} disabled={busy}>Delete goal</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+      <AlertDialog open={resetOpen} onOpenChange={setResetOpen}><AlertDialogContent className="max-w-sm rounded-2xl"><AlertDialogHeader><AlertDialogTitle>Reset savings progress?</AlertDialogTitle><AlertDialogDescription>Your goal stays in place, but its payment history and saved balance return to zero.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={resetGoal} disabled={busy}>Reset progress</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </main>
   );
 }
